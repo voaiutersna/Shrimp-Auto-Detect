@@ -1,0 +1,17 @@
+{
+  "name": "tds-monitor",
+  "version": "1.0.0",
+  "description": "รับค่า TDS/อุณหภูมิจาก ESP32 และแสดงผลบนเว็บ",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "fake": "node fake-sender.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=20.12"
+  }
+}

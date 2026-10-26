@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="th">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About · Water Monitor</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <script src="/rise.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: "var(--bg)", card: "var(--card)", ink: "var(--text)", muted: "var(--muted)", line: "var(--line)",
+            tds: "var(--tds)", temp: "var(--temp)", ok: "var(--ok)", warn: "var(--warn)", bad: "var(--bad)"
+          },
+          fontFamily: {
+            sans: ['"IBM Plex Sans Thai"', "system-ui", "sans-serif"],
+            mono: ['"IBM Plex Mono"', "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      --bg: #f4f7f8; --card: #ffffff; --text: #14212b; --muted: #5d6f7c; --line: #dde5ea;
+      --tds: #0e7c86; --temp: #d9662b; --ok: #1f8a4c; --warn: #c58a00; --bad: #c0392b;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f171d; --card: #17222b; --text: #e6eef3; --muted: #8fa3b1; --line: #26343f;
+        --tds: #3cc4cf; --temp: #f08a52;
+      }
+    }
+  </style>
+</head>
+
+<body class="m-0 bg-bg text-ink font-sans">
+  <div class="max-w-[960px] mx-auto px-4 pt-6 pb-12">
+    <header class="flex flex-wrap justify-between items-baseline gap-2">
+      <h1 class="m-0 text-[22px] font-semibold">คุณภาพน้ำ · TDS Monitor</h1>
+    </header>
+
+    <nav class="flex gap-1 mt-4 border-b border-line">
+      <a href="/" class="px-4 py-2 text-sm -mb-px border-b-2 border-transparent text-muted">แดชบอร์ด</a>
+      <a href="/about.html" class="px-4 py-2 text-sm -mb-px border-b-2 border-tds text-tds font-semibold">เกี่ยวกับโครงงาน</a>
+    </nav>
+
+    <main class="mt-5 space-y-3.5">
+      <div class="bg-card border border-line rounded-[14px] p-[18px]">
+        <h2 class="m-0 mb-2 text-lg font-semibold">TDS Monitor — ระบบตรวจวัดคุณภาพน้ำ</h2>
+        <p class="m-0 text-[15px] leading-relaxed text-muted">
+          โครงงานตรวจวัดค่า TDS (ปริมาณของแข็งที่ละลายในน้ำ) และอุณหภูมิน้ำแบบเรียลไทม์ ด้วยบอร์ด Arduino UNO R4 WiFi
+          ส่งข้อมูลผ่าน Wi-Fi ไปยังเซิร์ฟเวอร์ Node.js เก็บลงฐานข้อมูล SQLite และแสดงผลเป็นกราฟบนเว็บนี้
+          พร้อมแจ้งเตือนเมื่อ TDS สูงเกิน 800 ppm ซึ่งไม่เหมาะกับการเลี้ยงกุ้ง
+        </p>
+        <a id="ghLink" href="https://github.com/YOUR_USER/YOUR_REPO" target="_blank" rel="noopener"
+          class="inline-block mt-3 px-3 py-1 text-[13px] rounded-lg border border-line text-tds font-semibold">GitHub ↗</a>
+      </div>
+
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-3.5">
+        <div class="bg-card border border-line rounded-[14px] p-[18px]">
+          <h3 class="m-0 mb-2 text-[15px] font-semibold">ฮาร์ดแวร์</h3>
+          <ul class="m-0 pl-5 text-sm leading-relaxed text-muted list-disc">
+            <li>Arduino UNO R4 WiFi</li>
+            <li>เซนเซอร์ TDS → A1 (5V)</li>
+            <li>DS18B20 วัดอุณหภูมิ → D2 (ตัวต้านทาน 4.7kΩ ระหว่าง DATA และ 5V)</li>
+          </ul>
+        </div>
+        <div class="bg-card border border-line rounded-[14px] p-[18px]">
+          <h3 class="m-0 mb-2 text-[15px] font-semibold">วิธีทำงาน</h3>
+          <ul class="m-0 pl-5 text-sm leading-relaxed text-muted list-disc">
+            <li>สุ่มค่า analog 30 ค่า แล้วใช้ค่ามัธยฐานลดสัญญาณรบกวน</li>
+            <li>ชดเชยอุณหภูมิ: 1 + 0.02 × (T − 25)</li>
+            <li>ส่ง JSON ด้วย HTTP POST ทุก 1 วินาที พร้อม <span class="font-mono">x-api-key</span></li>
+            <li>หน้าเว็บดึงข้อมูลทุก 3 วินาที</li>
+          </ul>
+        </div>
+        <div class="bg-card border border-line rounded-[14px] p-[18px]">
+          <h3 class="m-0 mb-2 text-[15px] font-semibold">เซิร์ฟเวอร์ &amp; API</h3>
+          <ul class="m-0 pl-5 text-sm leading-relaxed text-muted list-disc">
+            <li>Node.js + Express + better-sqlite3</li>
+            <li><span class="font-mono">POST /api/readings</span> รับข้อมูลจากบอร์ด</li>
+            <li><span class="font-mono">GET /api/readings</span>, <span class="font-mono">/api/stats</span></li>
+            <li><span class="font-mono">GET /api/export.csv</span> ดาวน์โหลดข้อมูลทั้งหมด</li>
+          </ul>
+        </div>
+        <div class="bg-card border border-line rounded-[14px] p-[18px]">
+          <h3 class="m-0 mb-2 text-[15px] font-semibold">เกณฑ์คุณภาพน้ำ (TDS)</h3>
+          <ul class="m-0 pl-5 text-sm leading-relaxed text-muted list-disc">
+            <li>&lt; 50 ppm — ต่ำมาก (น้ำกลั่น/RO)</li>
+            <li>50–299 ppm — ดีมาก</li>
+            <li>300–799 ppm — พอใช้</li>
+            <li>≥ 800 ppm — สูง (ไม่เหมาะกับกุ้ง)</li>
+          </ul>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+
+</html>

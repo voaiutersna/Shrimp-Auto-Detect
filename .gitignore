@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Secrets (keep .env.example)
+.env
+
+# SQLite database and WAL files
+data.db
+data.db-shm
+data.db-wal
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

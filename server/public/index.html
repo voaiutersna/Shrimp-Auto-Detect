@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="th">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Water Monitor</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap"
+    rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <script src="/rise.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: "var(--bg)", card: "var(--card)", ink: "var(--text)", muted: "var(--muted)", line: "var(--line)",
+            tds: "var(--tds)", temp: "var(--temp)", ok: "var(--ok)", warn: "var(--warn)", bad: "var(--bad)"
+          },
+          fontFamily: {
+            sans: ['"IBM Plex Sans Thai"', "system-ui", "sans-serif"],
+            mono: ['"IBM Plex Mono"', "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      --bg: #f4f7f8; --card: #ffffff; --text: #14212b; --muted: #5d6f7c; --line: #dde5ea;
+      --tds: #0e7c86; --temp: #d9662b; --ok: #1f8a4c; --warn: #c58a00; --bad: #c0392b;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f171d; --card: #17222b; --text: #e6eef3; --muted: #8fa3b1; --line: #26343f;
+        --tds: #3cc4cf; --temp: #f08a52;
+      }
+    }
+  </style>
+</head>
+
+<body class="m-0 bg-bg text-ink font-sans">
+  <div class="max-w-[960px] mx-auto px-4 pt-6 pb-12">
+    <header class="flex flex-wrap justify-between items-baseline gap-2">
+      <h1 class="m-0 text-[22px] font-semibold">คุณภาพน้ำ · TDS Monitor</h1>
+      <div class="flex items-center gap-2 text-sm text-muted"><span class="w-[9px] h-[9px] rounded-full bg-muted" id="dot"></span><span id="statusText">กำลังโหลด…</span></div>
+    </header>
+
+    <nav class="flex gap-1 mt-4 border-b border-line">
+      <a href="/" class="px-4 py-2 text-sm -mb-px border-b-2 border-tds text-tds font-semibold">แดชบอร์ด</a>
+      <a href="/about.html" class="px-4 py-2 text-sm -mb-px border-b-2 border-transparent text-muted">เกี่ยวกับโครงงาน</a>
+    </nav>
+
+    <main>
+    <div class="hidden mt-4 px-[18px] py-3.5 rounded-xl font-semibold text-bad border border-bad bg-[color-mix(in_srgb,var(--bad)_15%,var(--card))]" id="shrimpAlert">⚠️ น้ำไม่เหมาะสำหรับกุ้ง (Water not good for shrimp) — TDS สูงเกิน 800 ppm</div>
+
+    <div class="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3.5 my-5">
+      <div class="bg-card border border-line rounded-[14px] p-[18px]">
+        <div class="text-[13px] text-muted">TDS</div>
+        <div class="font-mono text-[40px] mt-1.5" id="tds">--<small class="text-base text-muted ml-1">ppm</small></div>
+        <span class="inline-block mt-2 text-[13px] px-2.5 py-[3px] rounded-full font-semibold" id="tdsBadge"></span>
+      </div>
+      <div class="bg-card border border-line rounded-[14px] p-[18px]">
+        <div class="text-[13px] text-muted">อุณหภูมิน้ำ</div>
+        <div class="font-mono text-[40px] mt-1.5" id="temp">--<small class="text-base text-muted ml-1">°C</small></div>
+      </div>
+      <div class="bg-card border border-line rounded-[14px] p-[18px]">
+        <div class="text-[13px] text-muted">อัปเดตล่าสุด</div>
+        <div class="font-mono text-[22px] mt-1.5" id="time">--</div>
+      </div>
+    </div>
+
+    <div class="bg-card border border-line rounded-[14px] p-[18px]">
+      <div class="flex flex-wrap gap-2 mb-2.5">
+        <button data-n="60" class="range px-3 py-1 text-[13px] rounded-lg border border-line cursor-pointer">ล่าสุด 60 จุด</button>
+        <button data-n="360" class="range px-3 py-1 text-[13px] rounded-lg border border-line cursor-pointer">360 จุด</button>
+        <button data-n="2000" class="range px-3 py-1 text-[13px] rounded-lg border border-line cursor-pointer">2000 จุด</button>
+        <a href="/api/export.csv" class="ml-auto px-3 py-1 text-[13px] rounded-lg border border-line cursor-pointer">ดาวน์โหลด CSV</a>
+      </div>
+      <div class="text-[13px] text-muted mb-2" id="stats"></div>
+      <div class="h-80"><canvas id="chart"></canvas></div>
+    </div>
+    </main>
+  </div>
+
+  <script>
+    const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+    let limit = 60;
+
+    function tdsLevel(v) {
+      if (v < 50) return ["ต่ำมาก (น้ำกลั่น/RO)", css("--tds")];
+      if (v < 300) return ["ดีมาก", css("--ok")];
+      if (v < 800) return ["พอใช้", css("--warn")];
+      return ["สูง", css("--bad")];
+    }
+
+    const chart = new Chart(document.getElementById("chart"), {
+      type: "line",
+      data: {
+        labels: [], datasets: [
+          { label: "TDS (ppm)", data: [], borderColor: css("--tds"), yAxisID: "y", tension: .3, pointRadius: 0, borderWidth: 2 },
+          { label: "อุณหภูมิ (°C)", data: [], borderColor: css("--temp"), yAxisID: "y1", tension: .3, pointRadius: 0, borderWidth: 2 }
+        ]
+      },
+      options: {
+        maintainAspectRatio: false, animation: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { labels: { color: css("--muted") } } },
+        scales: {
+          x: { ticks: { color: css("--muted"), maxTicksLimit: 6 }, grid: { color: css("--line") } },
+          y: { position: "left", ticks: { color: css("--tds") }, grid: { color: css("--line") } },
+          y1: { position: "right", ticks: { color: css("--temp") }, grid: { drawOnChartArea: false } }
+        }
+      }
+    });
+
+    // เอาค่าใหมา
+    async function refresh() {
+      try {
+        const res = await fetch("/api/readings?limit=" + limit);
+        const data = await res.json();
+        chart.data.labels = data.map(d => new Date(d.time).toLocaleTimeString("th-TH"));
+        chart.data.datasets[0].data = data.map(d => d.tds);
+        chart.data.datasets[1].data = data.map(d => d.temperature);
+        chart.update();
+
+        const s = await (await fetch("/api/stats?hours=24")).json();
+        document.getElementById("stats").textContent = s.count
+          ? `24 ชม.: เฉลี่ย ${s.avgTds} ppm · ต่ำสุด ${Math.round(s.minTds)} · สูงสุด ${Math.round(s.maxTds)} · ${s.count} จุด`
+          : "";
+
+        const last = data[data.length - 1];
+        if (!last) { document.getElementById("statusText").textContent = "ยังไม่มีข้อมูลจากบอร์ด"; return; }
+
+        document.getElementById("tds").innerHTML = Math.round(last.tds) + "<small>ppm</small>";
+        document.getElementById("temp").innerHTML = last.temperature.toFixed(1) + "<small>°C</small>";
+        document.getElementById("time").textContent = new Date(last.time).toLocaleString("th-TH");
+        const [txt, color] = tdsLevel(last.tds);
+        const b = document.getElementById("tdsBadge");
+        b.textContent = txt; b.style.background = color + "22"; b.style.color = color;
+
+        document.getElementById("shrimpAlert").classList.toggle("hidden", last.tds <= 800);
+
+        // online ไหม
+        const age = (Date.now() - last.time) / 1000;
+        const live = age < 30;
+        document.getElementById("dot").classList.toggle("bg-ok", live);
+        document.getElementById("dot").classList.toggle("bg-muted", !live);
+        document.getElementById("dot").classList.toggle("ring-4", live);
+        document.getElementById("dot").classList.toggle("ring-[color-mix(in_srgb,var(--ok)_20%,transparent)]", live);
+        document.getElementById("statusText").textContent = live ? "ออนไลน์" : "ออฟไลน์ (ไม่มีข้อมูลใหม่ " + Math.round(age) + " วินาที)";
+      } catch (e) {
+        document.getElementById("statusText").textContent = "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้";
+      }
+    }
+
+    const ACTIVE = ["bg-tds", "text-white", "border-tds"];
+    const INACTIVE = ["bg-card", "text-ink"];
+    function setActive(btn) {
+      document.querySelectorAll("button[data-n]").forEach(b => {
+        b.classList.remove(...ACTIVE, ...INACTIVE);
+        b.classList.add(...(b === btn ? ACTIVE : INACTIVE));
+      });
+    }
+    document.querySelectorAll("button[data-n]").forEach(btn => btn.onclick = () => {
+      setActive(btn);
+      limit = +btn.dataset.n;
+      refresh();
+    });
+    setActive(document.querySelector("button[data-n='60']"));
+
+    refresh();
+    setInterval(refresh, 3000);
+  </script>
+</body>
+
+</html>
