@@ -1,0 +1,1001 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smart Shrimp Pond</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Smart Shrimp Pond Monitoring System — ระบบตรวจวัดคุณภาพน้ำบ่อกุ้งแบบเรียลไทม์ด้วย Arduino UNO R4 WiFi">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Chakra+Petch:wght@400;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one page. 3D model on top, a short text column under it. Single dark look on purpose. */
+:root {
+  --bg: #070808;
+  --line: #222628;
+  --fg: #eceeec;
+  --muted: #8b9190;
+  --display: "Orbitron", "Chakra Petch", system-ui, sans-serif;
+  --body: "Chakra Petch", "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 17px; line-height: 1.6; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+.wrap { max-width: 760px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+
+#model { height: min(68vh, 620px); min-height: 340px; cursor: grab; }
+#model:active { cursor: grabbing; }
+#model canvas { display: block; width: 100%; height: 100%; }
+
+header { padding-block: 8px 40px; text-align: center; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+h1 { font-family: var(--display); font-weight: 900; font-size: clamp(28px, 5vw, 46px); line-height: 1.1; margin: 0; text-wrap: balance; }
+h1 span { display: block; font-weight: 700; font-size: .55em; letter-spacing: .08em; color: #c9cdcb; margin-top: 8px; }
+.lead { color: #c6cac8; margin: 18px auto 0; max-width: 54ch; }
+
+h2 { font-family: var(--mono); font-size: 12.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+.block { border-top: 1px solid var(--line); padding-block: 26px; }
+ul { list-style: none; margin: 0; padding: 0; }
+.team li { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; }
+.team li span { font-family: var(--mono); font-size: 14px; color: var(--muted); white-space: nowrap; }
+
+.cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.card { margin: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #0f1112;
+  opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1); }
+.card.in { opacity: 1; transform: none; }
+.card img { display: block; width: 100%; height: 180px; object-fit: contain; padding: 14px; background: radial-gradient(circle at 50% 60%, #1b1f20, #0f1112 70%); }
+.card figcaption { display: flex; justify-content: space-between; gap: 10px; padding: 12px 14px; border-top: 1px solid var(--line); font-size: 15.5px; }
+.card figcaption span { font-family: var(--mono); font-size: 13px; color: var(--muted); white-space: nowrap; }
+@media (max-width: 520px) { .cards { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .card { opacity: 1; transform: none; transition: none; } }
+.code { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #0b0c0d; }
+.tabs { display: flex; align-items: center; gap: 4px; padding: 8px; border-bottom: 1px solid var(--line); background: #0f1112; }
+.tab { font: 500 13px var(--mono); color: var(--muted); background: none; border: 1px solid transparent; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+.tab[aria-selected="true"] { color: var(--fg); border-color: var(--line); background: var(--bg); }
+.copy { margin-left: auto; font: 500 12.5px var(--mono); color: var(--fg); background: none; border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+.copy:hover { border-color: var(--muted); }
+pre { margin: 0; padding: 14px 0; overflow: auto; max-height: 440px; font-family: var(--mono); font-size: 13px; line-height: 1.65; tab-size: 2; }
+pre code { display: block; min-width: max-content; counter-reset: ln; }
+pre .l { display: block; padding-right: 18px; }
+pre .l::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 44px; padding-right: 14px; text-align: right; color: #3b4042; user-select: none; }
+.c-cm { color: #6f7674; font-style: italic; } .c-st { color: #e6c98a; } .c-kw { color: #ff9b8a; } .c-nu { color: #9fd3ff; } .c-fn { color: #b9f0c0; } .c-pp { color: #d6a8ff; }
+.hint { margin: 10px 0 0; font-size: 14px; color: var(--muted); }
+footer { border-top: 1px solid var(--line); padding-block: 26px calc(30px + env(safe-area-inset-bottom, 0px)); text-align: center; }
+.btn { display: inline-block; font: 600 15px var(--body); padding: 11px 20px; border-radius: 8px; border: 1px solid var(--fg); background: var(--fg); color: var(--bg); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div id="model" aria-label="โมเดล 3 มิติของชุดอุปกรณ์ ลากเพื่อหมุนดูได้"></div>
+
+<main class="wrap">
+  <header>
+    <p class="eyebrow">IoT · Arduino UNO R4 WiFi</p>
+    <h1>Smart Shrimp Pond <span>MONITORING SYSTEM</span></h1>
+    <p class="lead">วัดค่า TDS และอุณหภูมิน้ำในบ่อกุ้ง ส่งขึ้นเว็บทุก 1 วินาที และแจ้งเตือนทันทีเมื่อ TDS เกิน 800 ppm</p>
+  </header>
+
+  <section class="block">
+    <h2>อุปกรณ์</h2>
+    <div class="cards">
+      <figure class="card"><img src="assets/arduino-r4-wifi.webp" alt="Arduino UNO R4 WiFi"><figcaption>Arduino UNO R4 WiFi<span>บอร์ดหลัก</span></figcaption></figure>
+      <figure class="card"><img src="assets/tds-meter.webp" alt="TDS Sensor"><figcaption>TDS Sensor<span>A1</span></figcaption></figure>
+      <figure class="card"><img src="assets/probes.webp" alt="หัววัด TDS และ DS18B20"><figcaption>DS18B20 (วัดอุณหภูมิ)<span>D2</span></figcaption></figure>
+      <figure class="card"><img src="assets/breadboard.webp" alt="เบรดบอร์ดและตัวต้านทาน 4.7 กิโลโอห์ม"><figcaption>ตัวต้านทาน 4.7 kΩ<span>D2 ↔ 5V</span></figcaption></figure>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>โค้ด</h2>
+    <div class="code">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" aria-selected="true" data-file="ino" id="tab-ino">arduino.ino</button>
+        <button class="tab" role="tab" aria-selected="false" data-file="srv" id="tab-srv">server.js</button>
+        <button class="copy" id="copy" type="button">คัดลอก</button>
+      </div>
+      <pre id="pre"><code id="codebox"></code></pre>
+    </div>
+    <p class="hint">arduino.ino อ่านเซนเซอร์แล้วส่งข้อมูลขึ้นเว็บ · server.js รับข้อมูล เก็บลง SQLite และส่งให้หน้าเว็บ · ชื่อ/รหัส Wi-Fi และ API key เป็นค่าตัวอย่าง</p>
+  </section>
+
+  <section class="block">
+    <h2>สมาชิก</h2>
+    <ul class="team">
+      <li>พรวัฒนา วัฒนธำรงค์ <span>68070115</span></li>
+      <li>พุฒิพงศ์ พฤฒิสถาพร <span>68070129</span></li>
+      <li>ภูวดล ไตรพรหม <span>68070147</span></li>
+    </ul>
+  </section>
+</main>
+
+<footer class="wrap">
+  <a class="btn" href="https://github.com/voaiutersna/Shrimp-Auto-Detect" target="_blank" rel="noopener">ดูโค้ดบน GitHub ↗</a>
+</footer>
+
+<script type="text/plain" id="src-ino">
+//   TDS     : VCC -> 5V, GND -> GND, A (signal) -> A1
+//   DS18B20 : VCC -> 5V, GND -> GND, DATA -> D2 (+ 4.7k resistor between DATA and 5V)
+
+#include <WiFiS3.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+//  wifi name and password
+const char* WIFI_SSID     = "YOUR_WIFI_NAME";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+
+// network adderss look with ipconfig in terminal to send message bewtween same wifi
+const char* SERVER_HOST = "192.168.1.10";
+const int   SERVER_PORT = 3000;
+const bool  USE_HTTPS   = false;
+const char* SERVER_PATH = "/api/readings";
+const char* API_KEY     = "your-secret-key"; 
+const unsigned long SEND_INTERVAL = 1000;   
+
+
+#define TdsSensorPin A1
+#define ONE_WIRE_BUS 2
+#define VREF 5.0   
+#define SCOUNT 30
+
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+
+WiFiClient    plainClient;
+WiFiSSLClient sslClient;
+
+int analogBuffer[SCOUNT];
+int analogBufferTemp[SCOUNT];
+int analogBufferIndex = 0;
+float averageVoltage = 0, tdsValue = 0, temperature = 25;  // 25 = default/fallback
+
+int getMedianNum(int bArray[], int iFilterLen);
+void connectWiFi();
+void sendData();
+
+void setup()
+{
+  Serial.begin(9600);
+  delay(1500);
+  pinMode(TdsSensorPin, INPUT);
+  sensors.begin();
+  sensors.setWaitForConversion(false);  
+  sensors.requestTemperatures();        
+
+  for (int i = 0; i < SCOUNT; i++) analogBuffer[i] = 0;
+
+  if (WiFi.status() == WL_NO_MODULE)
+  {
+    Serial.println("WiFi module not found!");
+    while (true);
+  }
+  String fv = WiFi.firmwareVersion();
+  if (fv < WIFI_FIRMWARE_LATEST_VERSION)
+    Serial.println("Please update the WiFi firmware (Tools > Firmware Updater)");
+
+  connectWiFi();
+}
+
+void loop()
+{
+  static unsigned long analogSampleTimepoint = millis();
+  if (millis() - analogSampleTimepoint > 40U)
+  {
+    analogSampleTimepoint = millis();
+    analogBuffer[analogBufferIndex] = analogRead(TdsSensorPin);
+    analogBufferIndex = (analogBufferIndex + 1) % SCOUNT;
+  }
+
+  static unsigned long tempTimepoint = millis();
+  if (millis() - tempTimepoint > 1000U)
+  {
+    tempTimepoint = millis();
+    float t = sensors.getTempCByIndex(0);   
+    if (t != DEVICE_DISCONNECTED_C)       
+      temperature = t;
+    sensors.requestTemperatures();          
+  }
+
+  static unsigned long printTimepoint = millis();
+  if (millis() - printTimepoint > 800U)
+  {
+    printTimepoint = millis();
+    for (int i = 0; i < SCOUNT; i++)
+      analogBufferTemp[i] = analogBuffer[i];
+
+    averageVoltage = getMedianNum(analogBufferTemp, SCOUNT) * (float)VREF / 1024.0;
+    float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0);
+    float v = averageVoltage / compensationCoefficient;
+    tdsValue = (133.42 * v * v * v - 255.86 * v * v + 857.39 * v) * 0.5;
+
+    Serial.print("Temp: ");
+    Serial.print(temperature, 1);
+    Serial.print(" C  |  TDS: ");
+    Serial.print(tdsValue, 0);
+    Serial.println(" ppm");
+  }
+
+  // 4) Send to the website
+  static unsigned long sendTimepoint = 0;
+  if (millis() - sendTimepoint > SEND_INTERVAL)
+  {
+    sendTimepoint = millis();
+    sendData();
+  }
+}
+
+void connectWiFi()
+{
+  Serial.print("Connecting WiFi: ");
+  Serial.println(WIFI_SSID);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+  unsigned long start = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - start < 15000)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    start = millis();
+    while (WiFi.localIP() == IPAddress(0, 0, 0, 0) && millis() - start < 5000)
+      delay(100);
+    Serial.print("WiFi OK, IP: ");
+    Serial.println(WiFi.localIP());
+  }
+  else
+  {
+    Serial.println("WiFi failed (will retry next time)");
+  }
+}
+
+void sendData()
+{
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    connectWiFi();
+    if (WiFi.status() != WL_CONNECTED) return;
+  }
+
+  Client& client = USE_HTTPS ? (Client&)sslClient : (Client&)plainClient;
+
+  if (!client.connect(SERVER_HOST, SERVER_PORT))
+  {
+    Serial.println("Could not connect to server");
+    return;
+  }
+
+  String body = String("{\"temperature\":") + String(temperature, 2) +
+                ",\"tds\":" + String(tdsValue, 1) + "}";
+
+  client.print(String("POST ") + SERVER_PATH + " HTTP/1.1\r\n");
+  client.print(String("Host: ") + SERVER_HOST + "\r\n");
+  client.print("Content-Type: application/json\r\n");
+  client.print(String("x-api-key: ") + API_KEY + "\r\n");
+  client.print(String("Content-Length: ") + body.length() + "\r\n");
+  client.print("Connection: close\r\n\r\n");
+  client.print(body);
+
+  unsigned long start = millis();
+  while (!client.available() && client.connected() && millis() - start < 5000)
+    delay(10);
+  String status = client.readStringUntil('\n');
+  Serial.print("Server: ");
+  if (status.length() > 0)
+    Serial.println(status);
+  else
+    Serial.println("(no response)");
+
+  client.stop();
+}
+
+int getMedianNum(int bArray[], int iFilterLen)
+{
+  int bTab[iFilterLen];
+  for (int i = 0; i < iFilterLen; i++)
+    bTab[i] = bArray[i];
+  for (int j = 0; j < iFilterLen - 1; j++)
+    for (int i = 0; i < iFilterLen - j - 1; i++)
+      if (bTab[i] > bTab[i + 1])
+      {
+        int t = bTab[i];
+        bTab[i] = bTab[i + 1];
+        bTab[i + 1] = t;
+      }
+  if (iFilterLen & 1)
+    return bTab[(iFilterLen - 1) / 2];
+  return (bTab[iFilterLen / 2] + bTab[iFilterLen / 2 - 1]) / 2;
+}</script>
+<script type="text/plain" id="src-srv">
+const express = require("express");
+const Database = require("better-sqlite3");
+const path = require("path");
+
+// load .env if present (real environment variables take precedence)
+if (require("fs").existsSync(path.join(__dirname, ".env"))) process.loadEnvFile(path.join(__dirname, ".env"));
+
+const PORT = process.env.PORT || 3000;
+// match with board
+const API_KEY = process.env.API_KEY || "your-secret-key"; 
+const DB_FILE = path.resolve(__dirname, process.env.DB_FILE || "data.db");
+
+// database
+const db = new Database(DB_FILE);
+db.pragma("journal_mode = WAL");
+db.exec(`
+  CREATE TABLE IF NOT EXISTS readings (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    time        INTEGER NOT NULL,          -- ms
+    temperature REAL    NOT NULL,
+    tds         REAL    NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_readings_time ON readings(time);
+`);
+
+const insertReading = db.prepare(
+  "INSERT INTO readings (time, temperature, tds) VALUES (?, ?, ?)"
+);
+const selectLatestN = db.prepare(
+  "SELECT time, temperature, tds FROM readings ORDER BY id DESC LIMIT ?"
+);
+const selectRange = db.prepare(
+  "SELECT time, temperature, tds FROM readings WHERE time BETWEEN ? AND ? ORDER BY time"
+);
+const selectStats = db.prepare(`
+  SELECT COUNT(*) AS count,
+         ROUND(AVG(tds), 1) AS avgTds, MIN(tds) AS minTds, MAX(tds) AS maxTds,
+         ROUND(AVG(temperature), 2) AS avgTemp
+  FROM readings WHERE time >= ?
+`);
+
+// web
+const app = express();
+app.use((req, res, next) => {
+  res.set({
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type, x-api-key",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  });
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
+
+// api for update dataw for uno
+app.post("/api/readings", (req, res) => {
+  if (req.get("x-api-key") !== API_KEY) {
+    return res.status(401).json({ error: "invalid api key" });
+  }
+  const temperature = Number(req.body.temperature);
+  const tds = Number(req.body.tds);
+  if (!Number.isFinite(temperature) || !Number.isFinite(tds)) {
+    return res.status(400).json({ error: "temperature and tds must be numbers" });
+  }
+  insertReading.run(Date.now(), temperature, tds);
+  res.json({ ok: true });
+});
+
+// for web to read
+app.get("/api/readings", (req, res) => {
+  if (req.query.from) {
+    const from = Number(req.query.from);
+    const to = Number(req.query.to) || Date.now();
+    return res.json(selectRange.all(from, to));
+  }
+  const limit = Math.min(parseInt(req.query.limit) || 200, 20000);
+  res.json(selectLatestN.all(limit).reverse());
+});
+
+app.get("/api/stats", (req, res) => {
+  const hours = Number(req.query.hours) || 24;
+  res.json(selectStats.get(Date.now() - hours * 3600 * 1000));
+});
+
+// CSV export
+app.get("/api/export.csv", (req, res) => {
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", "attachment; filename=readings.csv");
+  res.write("time,temperature,tds\n");
+  for (const r of db.prepare("SELECT time, temperature, tds FROM readings ORDER BY id").iterate()) {
+    res.write(`${new Date(r.time).toISOString()},${r.temperature},${r.tds}\n`);
+  }
+  res.end();
+});
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on http://localhost:${PORT}  (db: ${DB_FILE})`);
+});
+
+process.on("SIGINT", () => { db.close(); process.exit(0); });
+process.on("SIGTERM", () => { db.close(); process.exit(0); });
+</script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const files = { ino: $('src-ino').textContent.replace(/^\n/, ''), srv: $('src-srv').textContent.replace(/^\n/, '') };
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const KW = /\b(const|let|var|if|else|for|while|return|void|int|float|bool|true|false|new|function|require|unsigned|long|char|String|static|break|continue|null|async|await)\b/g;
+  function hiLine(line) {
+    let code = line, cm = '';
+    let inS = null, ci = -1;
+    for (let i = 0; i < line.length; i++) { const ch = line[i];
+      if (inS) { if (ch === '\\') { i++; continue; } if (ch === inS) inS = null; continue; }
+      if (ch === '"' || ch === "'" || ch === '`') { inS = ch; continue; }
+      if (ch === '/' && line[i + 1] === '/') { ci = i; break; } }
+    if (ci >= 0) { code = line.slice(0, ci); cm = line.slice(ci); }
+    const parts = code.split(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/g);
+    let out = parts.map((p, i) => {
+      if (i % 2) return '<span class="c-st">' + esc(p) + '</span>';
+      if (/^\s*#/.test(p)) return '<span class="c-pp">' + esc(p) + '</span>';
+      return esc(p).replace(KW, '<span class="c-kw">$1</span>').replace(/\b(\d+(?:\.\d+)?U?)\b/g, '<span class="c-nu">$1</span>').replace(/\b([A-Za-z_]\w*)(?=\()/g, '<span class="c-fn">$1</span>');
+    }).join('');
+    return out + (cm ? '<span class="c-cm">' + esc(cm) + '</span>' : '');
+  }
+  let cur = 'ino';
+  function show(file) {
+    cur = file;
+    $('codebox').innerHTML = files[file].split('\n').map((l) => '<span class="l">' + (hiLine(l) || ' ') + '</span>').join('');
+    document.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.file === file)));
+    $('pre').scrollTop = 0;
+  }
+  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => show(b.dataset.file)));
+  $('copy').addEventListener('click', async () => {
+    const btn = $('copy');
+    try { await navigator.clipboard.writeText(files[cur]); btn.textContent = 'คัดลอกแล้ว'; }
+    catch (e) { const r = document.createRange(); r.selectNodeContents($('codebox')); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); btn.textContent = 'กด Ctrl/⌘+C'; }
+    setTimeout(() => (btn.textContent = 'คัดลอก'), 1600);
+  });
+  show('ino');
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+  const cards = [...document.querySelectorAll('.card')];
+  const show = () => cards.forEach((c, i) => setTimeout(() => c.classList.add('in'), i * 120));
+  if (!('IntersectionObserver' in window)) { show(); return; }
+  const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { show(); io.disconnect(); } }, { threshold: 0.15 });
+  io.observe(document.querySelector('.cards'));
+})();
+(function () {
+  const host = document.getElementById('model');
+  if (!window.THREE) return;
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias: true }); } catch (e) { return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.95;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.physicallyCorrectLights = true;
+  host.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x070808);
+  scene.fog = new THREE.Fog(0x070808, 330, 720);
+
+  (function makeEnv() {
+    const room = new THREE.Scene();
+    const shell = new THREE.Mesh(new THREE.BoxGeometry(100, 60, 100), new THREE.MeshBasicMaterial({ color: 0x1e2022, side: THREE.BackSide }));
+    shell.position.y = 25; room.add(shell);
+    const panel = (w, h, x, y, z, ry, rx, k) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(k, k, k), side: THREE.DoubleSide })); m.position.set(x, y, z); m.rotation.y = ry || 0; m.rotation.x = rx || 0; room.add(m); };
+    panel(60, 30, 0, 54, 0, 0, Math.PI / 2, 4.5); panel(30, 40, -49, 25, 10, Math.PI / 2, 0, 2.6); panel(24, 30, 49, 28, -20, -Math.PI / 2, 0, 1.3);
+    const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(room, 0.03).texture; pm.dispose();
+  })();
+
+  const camera = new THREE.PerspectiveCamera(32, 1, 1, 2500);
+  camera.position.set(-152, 176, 262);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.target.set(-2, 14, 64);
+  controls.enableZoom = false;              // keep page scrolling normal
+  controls.enablePan = false;
+  controls.maxPolarAngle = Math.PI * 0.47;
+  controls.update();
+
+  scene.add(new THREE.HemisphereLight(0xe6edf0, 0x0c0d0e, 0.3));
+  const key = new THREE.DirectionalLight(0xfff6ea, 2.4);
+  key.position.set(-90, 230, 110); key.castShadow = true;
+  Object.assign(key.shadow.camera, { left: -170, right: 170, top: 170, bottom: -170, near: 20, far: 650 });
+  key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.00025; key.shadow.normalBias = 0.02; key.shadow.radius = 3;
+  scene.add(key);
+  const rim = new THREE.DirectionalLight(0xcfe0ea, 1.3); rim.position.set(170, 80, -170); scene.add(rim);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(2400, 2400), new THREE.ShadowMaterial({ opacity: 0.55 }));
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+
+  const TUBES = [];
+
+  // ---------- materials ----------
+  const std = (o) => new THREE.MeshStandardMaterial(o);
+  const phys = (o) => new THREE.MeshPhysicalMaterial(o);
+  const M = {
+    pcbSide: phys({ color: 0x0b5a63, roughness: 0.5, clearcoat: 0.6, clearcoatRoughness: 0.35 }),
+    fr4: std({ color: 0xc8b98a, roughness: 0.8 }),
+    header: std({ color: 0x0e0e0f, roughness: 0.42, metalness: 0 }),
+    hole: std({ color: 0x020202, roughness: 1 }),
+    gold: std({ color: 0xe0b45a, roughness: 0.22, metalness: 1 }),
+    tin: std({ color: 0xd9dcde, roughness: 0.18, metalness: 1 }),
+    shield: std({ color: 0xc8ccce, roughness: 0.32, metalness: 1 }),
+    chip: std({ color: 0x131414, roughness: 0.38 }),
+    blackPlastic: std({ color: 0x141515, roughness: 0.48 }),
+    whitePlastic: std({ color: 0xf0eee6, roughness: 0.5 }),
+    ivory: std({ color: 0xece6d2, roughness: 0.55 }),
+    capTan: std({ color: 0xb48a52, roughness: 0.5 }),
+    resSmd: std({ color: 0x0e0e0e, roughness: 0.4 }),
+    cable: std({ color: 0x0c0c0d, roughness: 0.42 }),
+    housing: std({ color: 0x0b0b0c, roughness: 0.36 }),
+    steel: std({ color: 0xd3d6d8, roughness: 0.2, metalness: 1 }),
+  };
+
+  function add(m, cast = true) { m.castShadow = cast; m.receiveShadow = true; scene.add(m); return m; }
+  function box(w, h, d, mat, x, y, z) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); return add(m); }
+  function cyl(rt, rb, h, mat, x, y, z, seg) { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg || 28), mat); m.position.set(x, y, z); return add(m); }
+  function rbox(w, h, d, r, mat, x, y, z) { // rounded box via extruded rounded rect
+    const s = new THREE.Shape(); const hw = w / 2 - r, hd = d / 2 - r;
+    s.absarc(hw, hd, r, 0, Math.PI / 2); s.absarc(-hw, hd, r, Math.PI / 2, Math.PI);
+    s.absarc(-hw, -hd, r, Math.PI, Math.PI * 1.5); s.absarc(hw, -hd, r, Math.PI * 1.5, Math.PI * 2);
+    const g = new THREE.ExtrudeGeometry(s, { depth: h, bevelEnabled: true, bevelThickness: Math.min(0.25, r), bevelSize: Math.min(0.25, r), bevelSegments: 2, curveSegments: 6 });
+    g.rotateX(-Math.PI / 2); g.translate(0, -h / 2, 0);
+    const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); return add(m);
+  }
+  function label() { return null; }
+  const wireMats = {};
+  const wireMat = (hex) => wireMats[hex] || (wireMats[hex] = phys({ color: hex, roughness: 0.32, clearcoat: 0.4, clearcoatRoughness: 0.3 }));
+  function tube(points, r, mat, seg) {
+    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+    const m = add(new THREE.Mesh(new THREE.TubeGeometry(curve, seg || 120, r, 12, false), mat));
+    TUBES.push({ mesh: m, curve, r, color: mat.color ? mat.color.getHex() : 0xffffff });
+    return m;
+  }
+  // Dupont housing seated on a hole or pin; returns where the wire leaves it
+  function dupont(p, male) {
+    rbox(2.5, 13, 2.5, 0.25, M.housing, p.x, p.y + 6.5 + (male ? 0 : 0), p.z);
+    if (male) box(0.64, 2, 0.64, M.tin, p.x, p.y - 0.6, p.z);
+    box(1.4, 0.8, 1.4, M.housing, p.x, p.y + 13.4, p.z); // strain relief
+    return new THREE.Vector3(p.x, p.y + 13.8, p.z);
+  }
+  // jumper wire with a natural arc and a little gravity sag
+  function jumper(a, b, hex, opts) {
+    const o = Object.assign({ lift: 18, maleA: true, maleB: true, bow: 0 }, opts);
+    const A = dupont(a, o.maleA), B = dupont(b, o.maleB);
+    const AB = B.clone().sub(A);
+    const side = new THREE.Vector3(-AB.z, 0, AB.x).normalize().multiplyScalar(o.bow);
+    const top = Math.max(A.y, B.y) + o.lift;
+    const p1 = new THREE.Vector3(A.x, A.y + o.lift * 0.6, A.z);
+    const p2 = A.clone().lerp(B, 0.33).add(side); p2.y = top;
+    const p3 = A.clone().lerp(B, 0.66).add(side); p3.y = top - o.lift * 0.08;
+    const p4 = new THREE.Vector3(B.x, B.y + o.lift * 0.6, B.z);
+    tube([A, p1, p2, p3, p4, B], 0.72, wireMat(hex));
+  }
+
+  const C = { v5: 0xd23b33, gnd: 0x1d1f21, a1: 0x2f9e55, d2: 0xe9c235 };
+
+  // ======================================================================
+  // Arduino UNO R4 WiFi — real UNO outline in mm (origin: lower-left, y toward the digital header)
+  // ======================================================================
+  const BW = 68.58, BD = 53.34, BT = 1.6, BY = 3.2;
+  const topY = BY + BT;
+  const toScene = (sx, sy) => new THREE.Vector3(sx - BW / 2, 0, BD / 2 - sy);
+  const outline = [[0, 0], [66.04, 0], [66.04, 1.27], [68.58, 3.81], [68.58, 38.1], [66.04, 40.64], [66.04, 51.56], [64.52, 53.34], [0, 53.34]];
+  const mountHoles = [[13.97, 2.54], [15.24, 50.8], [66.04, 7.62], [66.04, 35.56]];
+  {
+    const s = new THREE.Shape(); outline.forEach(([x, y], i) => i ? s.lineTo(x, y) : s.moveTo(x, y)); s.closePath();
+    mountHoles.forEach(([x, y]) => { const h = new THREE.Path(); h.absarc(x, y, 1.6, 0, Math.PI * 2, true); s.holes.push(h); });
+    const g = new THREE.ExtrudeGeometry(s, { depth: BT, bevelEnabled: false, curveSegments: 24 });
+    g.rotateX(-Math.PI / 2);
+    const body = new THREE.Mesh(g, [M.pcbSide, M.fr4]);
+    body.position.set(-BW / 2, BY, BD / 2);
+    add(body);
+    // standoffs + plated rings around mounting holes
+    mountHoles.forEach(([x, y]) => {
+      const p = toScene(x, y);
+      cyl(2.6, 2.6, BY, std({ color: 0x1a1a1a, roughness: 0.6 }), p.x, BY / 2, p.z, 20);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.8, 32), M.tin);
+      ring.rotation.x = -Math.PI / 2; ring.position.set(p.x, topY + 0.015, p.z); add(ring, false);
+    });
+  }
+
+  // top face: solder mask + silkscreen + pads painted on a canvas, clipped to the outline
+  const S = 24;
+  const cv = document.createElement('canvas'); cv.width = Math.round(BW * S); cv.height = Math.round(BD * S);
+  const g = cv.getContext('2d');
+  const cx = (sx) => sx * S, cy = (sy) => (BD - sy) * S;
+  function paintBoard() {
+    g.clearRect(0, 0, cv.width, cv.height);
+    g.save();
+    g.beginPath(); outline.forEach(([x, y], i) => i ? g.lineTo(cx(x), cy(y)) : g.moveTo(cx(x), cy(y))); g.closePath(); g.clip();
+    const grd = g.createLinearGradient(0, 0, cv.width, cv.height);
+    grd.addColorStop(0, '#0f6f79'); grd.addColorStop(1, '#0b5f69');
+    g.fillStyle = grd; g.fillRect(0, 0, cv.width, cv.height);
+    // copper traces under the mask
+    g.strokeStyle = 'rgba(120, 215, 210, 0.13)'; g.lineCap = 'round';
+    const rnd = mulberry(7);
+    for (let i = 0; i < 70; i++) {
+      g.lineWidth = 3 + rnd() * 5;
+      let x = cx(8 + rnd() * 54), y = cy(6 + rnd() * 40);
+      g.beginPath(); g.moveTo(x, y);
+      for (let k = 0; k < 3; k++) { if (k % 2) x += (rnd() - 0.5) * 300; else y += (rnd() - 0.5) * 300; g.lineTo(x, y); }
+      g.stroke();
+    }
+    // vias
+    g.fillStyle = 'rgba(200, 230, 228, 0.35)';
+    for (let i = 0; i < 90; i++) { g.beginPath(); g.arc(cx(6 + rnd() * 58), cy(6 + rnd() * 42), 4, 0, Math.PI * 2); g.fill(); }
+    // silkscreen
+    g.fillStyle = '#f2f4f2'; g.strokeStyle = '#f2f4f2';
+    g.font = '600 72px "IBM Plex Mono", monospace'; g.textAlign = 'left';
+    g.fillText('UNO R4 WiFi', cx(20), cy(27));
+    g.font = '500 30px "IBM Plex Mono", monospace';
+    g.fillText('MADE IN ITALY', cx(20.5), cy(24.2));
+    g.font = '600 26px "IBM Plex Mono", monospace';
+    g.fillText('POWER', cx(31), cy(7.3)); g.fillText('ANALOG IN', cx(51.5), cy(7.3));
+    g.fillText('DIGITAL (PWM~)', cx(44), cy(45.5));
+    g.fillText('ON', cx(60), cy(31)); g.fillText('L', cx(26), cy(41)); g.fillText('TX', cx(26), cy(37.6)); g.fillText('RX', cx(26), cy(35.2));
+    g.fillText('RESET', cx(3), cy(44.5)); g.fillText('ICSP', cx(61), cy(22.5));
+    // silkscreen boxes around headers
+    g.lineWidth = 3;
+    g.strokeRect(cx(17.5), cy(52.3), (64.8 - 17.5) * S, 3 * S);
+    g.strokeRect(cx(26.6), cy(4.0), (64.8 - 26.6) * S, 3 * S);
+    g.restore();
+  }
+  function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  // header layout (real UNO footprint)
+  const P = 2.54;
+  const pins = {};
+  function femaleHeader(names, sx0, sy, keyPrefix) {
+    const n = names.length;
+    const mid = toScene(sx0 + (n - 1) * P / 2, sy);
+    rbox(n * P, 8.5, P, 0.15, M.header, mid.x, topY + 4.25, mid.z);
+    names.forEach((nm, i) => {
+      const p = toScene(sx0 + i * P, sy);
+      const h = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.2, 1.05), M.hole); h.position.set(p.x, topY + 8.45, p.z); scene.add(h);
+      const k = keyPrefix + nm; pins[pins[k] ? k + '#2' : k] = new THREE.Vector3(p.x, topY + 8.5, p.z);
+      // pin label in silkscreen
+      g.save(); g.translate(cx(sx0 + i * P), cy(sy) + (sy > 26 ? 2.4 * S : -2.4 * S)); g.rotate(-Math.PI / 2);
+      g.fillStyle = '#f2f4f2'; g.font = '500 24px "IBM Plex Mono", monospace';
+      g.textAlign = sy > 26 ? 'right' : 'left'; g.fillText(nm.replace('D', ''), 0, 8); g.restore();
+    });
+  }
+  function buildHeaders() {
+    femaleHeader(['SCL', 'SDA', 'AREF', 'GND', '13', '12', '11', '~10', '~9', '8'], 18.796, 50.8, 'D:');
+    femaleHeader(['7', '~6', '~5', '4', '~3', '2', 'TX→1', 'RX←0'], 45.72, 50.8, 'D:');
+    femaleHeader(['NC', 'IOREF', 'RESET', '3.3V', '5V', 'GND', 'GND', 'VIN'], 27.94, 2.54, 'P:');
+    femaleHeader(['A0', 'A1', 'A2', 'A3', 'A4', 'A5'], 50.8, 2.54, 'A:');
+  }
+  paintBoard();
+  buildHeaders();
+
+  const silkTex = new THREE.CanvasTexture(cv);
+  silkTex.encoding = THREE.sRGBEncoding; silkTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  {
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(BW, BD),
+      phys({ map: silkTex, transparent: true, alphaTest: 0.5, roughness: 0.42, clearcoat: 0.7, clearcoatRoughness: 0.25 }));
+    plane.rotation.x = -Math.PI / 2; plane.position.set(0, topY + 0.01, 0); plane.receiveShadow = true; scene.add(plane);
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { paintBoard(); relabel(); silkTex.needsUpdate = true; });
+  function relabel() { // repaint header pin labels after webfont loads (geometry already built)
+    const draw = (names, sx0, sy) => names.forEach((nm, i) => {
+      g.save(); g.translate(cx(sx0 + i * P), cy(sy) + (sy > 26 ? 2.4 * S : -2.4 * S)); g.rotate(-Math.PI / 2);
+      g.fillStyle = '#f2f4f2'; g.font = '500 24px "IBM Plex Mono", monospace'; g.textAlign = sy > 26 ? 'right' : 'left'; g.fillText(nm, 0, 8); g.restore();
+    });
+    draw(['SCL', 'SDA', 'AREF', 'GND', '13', '12', '11', '~10', '~9', '8'], 18.796, 50.8);
+    draw(['7', '~6', '~5', '4', '~3', '2', 'TX→1', 'RX←0'], 45.72, 50.8);
+    draw(['NC', 'IOREF', 'RESET', '3.3V', '5V', 'GND', 'GND', 'VIN'], 27.94, 2.54);
+    draw(['A0', 'A1', 'A2', 'A3', 'A4', 'A5'], 50.8, 2.54);
+  }
+
+  const at = (sx, sy) => toScene(sx, sy);
+  // USB-C receptacle (left edge)
+  { const p = at(3.6, 38.1); rbox(7.4, 3.2, 9, 1.2, M.shield, p.x - 0.8, topY + 1.6, p.z); box(0.4, 1.4, 6.6, M.hole, p.x - 4.55, topY + 1.6, p.z); box(0.2, 0.6, 5.2, M.blackPlastic, p.x - 4.3, topY + 1.6, p.z); }
+  // DC barrel jack
+  { const p = at(6.2, 7.6); rbox(14, 11, 9, 0.6, M.blackPlastic, p.x - 1, topY + 5.5, p.z);
+    const bore = cyl(3.1, 3.1, 0.5, M.hole, p.x - 8.05, topY + 6.2, p.z, 32); bore.rotation.z = Math.PI / 2;
+    const pin = cyl(1.05, 1.05, 3, M.tin, p.x - 7.2, topY + 6.2, p.z, 16); pin.rotation.z = Math.PI / 2; }
+  // ESP32-S3-MINI-1 Wi-Fi module (metal can + PCB antenna tail)
+  { const p = at(37, 37); box(15.4, 0.8, 20.5, std({ color: 0x1d2a2e, roughness: 0.5 }), p.x, topY + 0.4, p.z - 2.5);
+    rbox(15.4, 2.2, 15.4, 0.3, M.shield, p.x, topY + 1.9, p.z);
+    const lt = document.createElement('canvas'); lt.width = 256; lt.height = 256; const l = lt.getContext('2d');
+    l.fillStyle = 'rgba(0,0,0,0)'; l.fillRect(0, 0, 256, 256); l.fillStyle = 'rgba(40,44,46,0.75)'; l.font = '600 26px "IBM Plex Mono", monospace';
+    l.fillText('ESP32-S3', 40, 110); l.font = '500 18px "IBM Plex Mono", monospace'; l.fillText('MINI-1  N8', 40, 140); l.fillText('Wi-Fi + BLE', 40, 166);
+    const t = new THREE.CanvasTexture(lt); t.encoding = THREE.sRGBEncoding;
+    const lab = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.MeshStandardMaterial({ map: t, transparent: true, roughness: 0.4 }));
+    lab.rotation.x = -Math.PI / 2; lab.position.set(p.x, topY + 3.02, p.z); scene.add(lab); }
+  // Renesas RA4M1 (LQFP-64)
+  { const p = at(25, 22); box(10, 1.4, 10, M.chip, p.x, topY + 0.7, p.z);
+    const leads = new THREE.InstancedMesh(new THREE.BoxGeometry(0.22, 0.18, 1.2), M.tin, 64); const m4 = new THREE.Matrix4(); let k = 0;
+    for (let i = 0; i < 16; i++) {
+      const o = -3.75 + i * 0.5;
+      [[o, -5.5, 0], [o, 5.5, 0], [-5.5, o, 1], [5.5, o, 1]].forEach(([dx, dz, rot]) => {
+        m4.makeRotationY(rot ? Math.PI / 2 : 0); m4.setPosition(p.x + dx, topY + 0.15, p.z + dz); leads.setMatrixAt(k++, m4);
+      });
+    }
+    leads.castShadow = true; scene.add(leads);
+    const dot = cyl(0.5, 0.5, 0.05, std({ color: 0x2a2b2c, roughness: 0.6 }), p.x - 3.5, topY + 1.42, p.z - 3.5, 16); dot.castShadow = false; }
+  // 12×8 LED matrix (unlit white SMD LEDs, a few lit red)
+  {
+    const geo = new THREE.BoxGeometry(0.8, 0.45, 0.55);
+    const off = new THREE.InstancedMesh(geo, std({ color: 0xf3efe0, roughness: 0.35 }), 96);
+    const lit = std({ color: 0xff3b2b, emissive: 0xff2a1a, emissiveIntensity: 2.2, roughness: 0.3 });
+    const m4 = new THREE.Matrix4(); let k = 0;
+    // small shrimp-ish wave pattern lit on the matrix
+    const on = new Set(['2,3', '3,2', '4,2', '5,3', '6,4', '7,4', '8,3', '9,3', '3,4', '4,5', '5,5', '6,5', '9,2', '10,4']);
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 12; c++) {
+      const p = at(46 + c * 1.6, 28 - r * 1.6);
+      if (on.has(c + ',' + r)) { const l = new THREE.Mesh(geo, lit); l.position.set(p.x, topY + 0.23, p.z); scene.add(l); }
+      else { m4.makeTranslation(p.x, topY + 0.23, p.z); off.setMatrixAt(k++, m4); }
+    }
+    off.count = k; scene.add(off);
+    const glow = new THREE.PointLight(0xff3020, 0.12, 30, 2); const gp = at(54, 23); glow.position.set(gp.x, topY + 3, gp.z); scene.add(glow);
+  }
+  // reset button, Qwiic connector, ICSP header, crystal, status LEDs
+  { const p = at(5, 47.5); rbox(6, 1.6, 6, 0.4, M.shield, p.x, topY + 0.8, p.z); cyl(1.6, 1.6, 1, M.blackPlastic, p.x, topY + 2.1, p.z, 24); }
+  { const p = at(65, 46); rbox(4.3, 2.9, 6, 0.3, M.whitePlastic, p.x, topY + 1.45, p.z); box(3.2, 1.6, 0.4, M.hole, p.x + 2.05, topY + 1.6, p.z); }
+  { // ICSP 2×3 male pins
+    const base = at(64.4, 27); rbox(2 * P, 2.5, 3 * P, 0.15, M.header, base.x, topY + 1.25, base.z);
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 3; j++) box(0.64, 8.5, 0.64, M.gold, base.x - P / 2 + i * P, topY + 3.6, base.z - P + j * P);
+  }
+  { const p = at(18, 22); rbox(3.2, 1.0, 2.5, 0.4, M.tin, p.x, topY + 0.5, p.z); }
+  [[28, 41, 0xffa21a], [28, 37.8, 0x27c8ff], [28, 35.4, 0x27c8ff], [62, 31.3, 0x3bff5c]].forEach(([sx, sy, col], i) => {
+    const p = at(sx, sy);
+    box(1.6, 0.55, 0.8, std({ color: 0xf5f3e8, roughness: 0.3, emissive: i === 3 ? col : 0x000000, emissiveIntensity: i === 3 ? 2 : 0 }), p.x, topY + 0.28, p.z);
+  });
+  // passives scattered where real boards have them
+  {
+    const rnd = mulberry(42);
+    const zones = [[10, 14, 18, 30], [32, 44, 12, 26], [10, 22, 28, 36], [40, 44, 28, 33], [48, 62, 34, 40], [20, 30, 8, 14]];
+    const resGeo = new THREE.BoxGeometry(1.6, 0.5, 0.8), capGeo = new THREE.BoxGeometry(1.6, 0.8, 0.8);
+    const res = new THREE.InstancedMesh(resGeo, M.resSmd, 60), cap = new THREE.InstancedMesh(capGeo, M.capTan, 60);
+    const ends = new THREE.InstancedMesh(new THREE.BoxGeometry(0.3, 0.55, 0.82), M.tin, 240);
+    const m4 = new THREE.Matrix4(); let ri = 0, ci = 0, ei = 0;
+    zones.forEach(([x0, x1, y0, y1]) => {
+      for (let i = 0; i < 18; i++) {
+        const sx = x0 + rnd() * (x1 - x0), sy = y0 + rnd() * (y1 - y0), rot = rnd() > 0.5 ? Math.PI / 2 : 0, p = at(sx, sy);
+        const isRes = rnd() > 0.45; const h = isRes ? 0.25 : 0.4;
+        m4.makeRotationY(rot); m4.setPosition(p.x, topY + h, p.z);
+        if (isRes && ri < 60) res.setMatrixAt(ri++, m4); else if (ci < 60) cap.setMatrixAt(ci++, m4); else continue;
+        [-0.72, 0.72].forEach((o) => { const e = new THREE.Matrix4().makeRotationY(rot); e.setPosition(p.x + (rot ? 0 : o), topY + 0.27, p.z + (rot ? o : 0)); if (ei < 240) ends.setMatrixAt(ei++, e); });
+      }
+    });
+    res.count = ri; cap.count = ci; ends.count = ei;
+    [res, cap, ends].forEach((m) => { m.castShadow = true; scene.add(m); });
+  }
+  label('Arduino UNO R4 WiFi', new THREE.Vector3(-18, topY + 24, -4), 'big');
+
+  // ======================================================================
+  // Mini breadboard (170 tie points)
+  // ======================================================================
+  const BB = { x: 35, z: 60, w: 46.5, d: 35, h: 8.5 };
+  {
+    const c = document.createElement('canvas'); const s = 20; c.width = BB.w * s; c.height = BB.d * s;
+    const x = c.getContext('2d');
+    x.fillStyle = '#f1f0ea'; x.fillRect(0, 0, c.width, c.height);
+    x.fillStyle = '#dcdad1'; x.fillRect(0, c.height / 2 - 1.1 * s, c.width, 2.2 * s);
+    x.font = '500 22px "IBM Plex Mono", monospace'; x.fillStyle = '#9a978d'; x.textAlign = 'center';
+    for (let col = 1; col <= 17; col++) {
+      const px = (BB.w / 2 + (col - 9) * P) * s;
+      if (col % 5 === 1 || col === 17) { x.fillText(String(col), px, 1.6 * s); x.fillText(String(col), px, c.height - 0.7 * s); }
+      for (let r = 0; r < 10; r++) {
+        const dz = r < 5 ? -3.81 - (4 - r) * P : 3.81 + (r - 5) * P;
+        const pz = (BB.d / 2 + dz) * s;
+        x.fillStyle = '#3d3c38'; x.fillRect(px - 0.55 * s, pz - 0.55 * s, 1.1 * s, 1.1 * s);
+        x.fillStyle = '#8f8e88'; x.fillRect(px - 0.25 * s, pz - 0.12 * s, 0.5 * s, 0.24 * s);
+      }
+    }
+    'abcdefghij'.split('').forEach((ch, r) => {
+      const dz = r < 5 ? -3.81 - (4 - r) * P : 3.81 + (r - 5) * P;
+      x.fillText(ch, 1.2 * s, (BB.d / 2 + dz) * s + 7); x.fillText(ch, c.width - 1.2 * s, (BB.d / 2 + dz) * s + 7);
+    });
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    const side = std({ color: 0xebeae3, roughness: 0.62 });
+    const top = std({ map: t, roughness: 0.62 });
+    const bb = new THREE.Mesh(new THREE.BoxGeometry(BB.w, BB.h, BB.d), [side, side, top, side, side, side]);
+    bb.position.set(BB.x, BB.h / 2, BB.z); add(bb);
+  }
+  const hole = (col, row) => {
+    const z = row < 5 ? BB.z - 3.81 - (4 - row) * P : BB.z + 3.81 + (row - 5) * P;
+    return new THREE.Vector3(BB.x + (col - 9) * P, BB.h, z);
+  };
+  label('Breadboard', new THREE.Vector3(BB.x + 15, BB.h + 4, BB.z + 21), '');
+
+  // 4.7 kΩ through-hole resistor: col 3 ↔ col 6 on row c
+  {
+    const a = hole(3, 2), b = hole(6, 2), y = BB.h + 3.4, mx = (a.x + b.x) / 2;
+    const prof = [];
+    for (let i = 0; i <= 20; i++) { const t = i / 20; const x = -3.1 + t * 6.2; const r = 1.0 + 0.22 * Math.max(0, Math.cos(Math.PI * (Math.abs(x) - 2.2) / 1.8)) * (Math.abs(x) > 1.2 ? 1 : 0.4); prof.push(new THREE.Vector2(Math.max(0.35, r), x)); }
+    const body = new THREE.Mesh(new THREE.LatheGeometry(prof, 32), std({ color: 0xd9c49a, roughness: 0.55 }));
+    body.rotation.z = Math.PI / 2; body.position.set(mx, y, a.z); add(body);
+    [[0xd9a92a, -1.75], [0x6b3fa0, -0.85], [0xc0392b, 0.05], [0xc9a24b, 1.75]].forEach(([col, off]) => {
+      const band = cyl(1.13, 1.13, 0.42, std({ color: col, roughness: 0.45, metalness: col === 0xc9a24b ? 0.8 : 0 }), mx + off, y, a.z, 32);
+      band.rotation.z = Math.PI / 2;
+    });
+    [a, b].forEach((p, i) => {
+      const xe = mx + (i ? 3.1 : -3.1);
+      tube([new THREE.Vector3(p.x, p.y - 1, p.z), new THREE.Vector3(p.x, y - 0.6, p.z), new THREE.Vector3(p.x + (i ? -0.15 : 0.15), y, p.z), new THREE.Vector3(xe, y, p.z)], 0.26, M.tin, 30);
+    });
+    label('4.7 kΩ pull-up', new THREE.Vector3(mx, y + 7, a.z - 5), '');
+  }
+
+  // ======================================================================
+  // TDS meter module (blue PCB, analog output)
+  // ======================================================================
+  const TDS = { x: -40, z: 66 };
+  {
+    const pcb = rbox(30, 1.6, 42, 1.2, phys({ color: 0x1b3f8f, roughness: 0.45, clearcoat: 0.6, clearcoatRoughness: 0.3 }), TDS.x, 3.4, TDS.z);
+    [[-12.5, -18.5], [12.5, -18.5], [-12.5, 18.5], [12.5, 18.5]].forEach(([x, z]) => {
+      cyl(1.5, 1.5, 2.6, std({ color: 0xd4d6d8, roughness: 0.3, metalness: 1 }), TDS.x + x, 1.3, TDS.z + z, 6);
+      const r = new THREE.Mesh(new THREE.RingGeometry(1.4, 2.4, 24), M.tin); r.rotation.x = -Math.PI / 2; r.position.set(TDS.x + x, 4.22, TDS.z + z); scene.add(r);
+    });
+    // silkscreen
+    const c = document.createElement('canvas'); c.width = 600; c.height = 840; const x = c.getContext('2d');
+    x.fillStyle = 'rgba(0,0,0,0)'; x.fillRect(0, 0, 600, 840); x.fillStyle = '#f2f4f2';
+    x.font = '600 52px "IBM Plex Mono", monospace'; x.fillText('TDS Meter', 70, 430);
+    x.font = '500 32px "IBM Plex Mono", monospace'; x.fillText('V1.0', 70, 480);
+    x.fillText('+   −   A', 225, 120);
+    x.fillText('PROBE', 90, 720);
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+    const lab = new THREE.Mesh(new THREE.PlaneGeometry(30, 42), std({ map: t, transparent: true, roughness: 0.45 }));
+    lab.rotation.x = -Math.PI / 2; lab.position.set(TDS.x, 4.23, TDS.z); scene.add(lab);
+    // op-amp SOIC-8, trimmer, caps
+    box(5, 1.5, 4, M.chip, TDS.x - 5, 4.95, TDS.z + 2);
+    for (let i = 0; i < 4; i++) [-2.6, 2.6].forEach((dz) => box(0.4, 0.3, 0.9, M.tin, TDS.x - 6.9 + i * 1.27, 4.35, TDS.z + 2 + dz));
+    rbox(6.5, 4.5, 6.5, 0.6, std({ color: 0x2f5fc0, roughness: 0.4 }), TDS.x + 8, 6.4, TDS.z + 3);
+    cyl(1.6, 1.6, 0.6, M.tin, TDS.x + 8, 8.9, TDS.z + 3, 20);
+    const cap = cyl(2.5, 2.5, 5, std({ color: 0x1b1b1b, roughness: 0.4 }), TDS.x + 7, 6.7, TDS.z - 7, 28);
+    cyl(2.52, 2.52, 0.3, M.tin, TDS.x + 7, 9.25, TDS.z - 7, 28);
+    // white XH probe connector
+    rbox(9.8, 6, 5.8, 0.3, M.ivory, TDS.x, 7.2, TDS.z + 16);
+  }
+  const tdsPins = {};
+  ['+', '−', 'A'].forEach((nm, i) => {
+    const x = TDS.x - P + i * P, z = TDS.z - 17;
+    rbox(P, 2.5, P, 0.15, M.header, x, 5.45, z);
+    box(0.64, 8.5, 0.64, M.gold, x, 8.4, z);
+    tdsPins[nm] = new THREE.Vector3(x, 12.6, z);
+  });
+  label('TDS Meter', new THREE.Vector3(TDS.x, 19, TDS.z + 2), 'big');
+
+  // ======================================================================
+  // Beaker of pond water with both probes
+  // ======================================================================
+  const GL = { x: -4, z: 134, r: 24, h: 54 };
+  {
+    const outer = [];
+    outer.push(new THREE.Vector2(0, 0)); outer.push(new THREE.Vector2(GL.r - 1, 0)); outer.push(new THREE.Vector2(GL.r, 1));
+    outer.push(new THREE.Vector2(GL.r, GL.h)); outer.push(new THREE.Vector2(GL.r + 0.6, GL.h + 0.6)); outer.push(new THREE.Vector2(GL.r - 1.2, GL.h + 0.6));
+    outer.push(new THREE.Vector2(GL.r - 1.2, 2.4)); outer.push(new THREE.Vector2(0, 2.4));
+    const glass = new THREE.Mesh(new THREE.LatheGeometry(outer, 72),
+      phys({ color: 0xffffff, metalness: 0, roughness: 0.02, transmission: 1, transparent: true, opacity: 1, envMapIntensity: 1.2, side: THREE.DoubleSide }));
+    glass.position.set(GL.x, 0, GL.z); glass.castShadow = false; glass.receiveShadow = false; scene.add(glass);
+    const water = new THREE.Mesh(new THREE.CylinderGeometry(GL.r - 1.3, GL.r - 1.3, 38, 72),
+      phys({ color: 0x8aa58c, roughness: 0.04, transmission: 0.82, transparent: true, opacity: 0.92 }));
+    water.position.set(GL.x, 2.4 + 19, GL.z); scene.add(water);
+    // graduation marks
+    for (let i = 1; i <= 4; i++) {
+      const tick = new THREE.Mesh(new THREE.BoxGeometry(5, 0.35, 0.2), std({ color: 0xf4f4f4, roughness: 0.4 }));
+      const ang = Math.PI * 0.62; tick.position.set(GL.x + Math.cos(ang) * (GL.r + 0.05), 10 + i * 9, GL.z + Math.sin(ang) * (GL.r + 0.05));
+      tick.rotation.y = -ang + Math.PI / 2; scene.add(tick);
+    }
+    label('น้ำจากบ่อกุ้ง', new THREE.Vector3(GL.x - 20, 30, GL.z + 24), '');
+  }
+  // TDS probe: white ABS body, two titanium electrodes
+  const probe = { x: GL.x - 9, z: GL.z - 2 };
+  {
+    const prof = [new THREE.Vector2(0, 0), new THREE.Vector2(2.6, 0), new THREE.Vector2(2.6, 10), new THREE.Vector2(5.4, 12), new THREE.Vector2(5.4, 28), new THREE.Vector2(3, 31), new THREE.Vector2(1.6, 33), new THREE.Vector2(0, 33)];
+    const body = new THREE.Mesh(new THREE.LatheGeometry(prof, 40), std({ color: 0xf2f1ec, roughness: 0.38 }));
+    body.position.set(probe.x, 26, probe.z); add(body);
+    cyl(0.55, 0.55, 14, M.steel, probe.x - 1.4, 20, probe.z, 14);
+    cyl(0.55, 0.55, 14, M.steel, probe.x + 1.4, 20, probe.z, 14);
+    tube([
+      new THREE.Vector3(probe.x, 58.5, probe.z), new THREE.Vector3(probe.x - 3, 70, probe.z - 9),
+      new THREE.Vector3(TDS.x + 6, 46, TDS.z + 46), new THREE.Vector3(TDS.x, 18, TDS.z + 26),
+      new THREE.Vector3(TDS.x, 10.4, TDS.z + 18.6),
+    ], 1.55, M.cable);
+    rbox(8.6, 4, 4, 0.3, M.ivory, TDS.x, 9.2, TDS.z + 19.6); // mating plug
+    label('TDS Probe', new THREE.Vector3(probe.x - 8, 64, probe.z), '');
+  }
+  // DS18B20 waterproof probe
+  {
+    const tip = new THREE.Vector3(GL.x + 9, 12, GL.z + 3), top = new THREE.Vector3(GL.x + 13.5, 48, GL.z - 3);
+    const dir = top.clone().sub(tip), len = dir.length(); dir.normalize();
+    const steel = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, len, 40), M.steel);
+    steel.position.copy(tip.clone().add(top).multiplyScalar(0.5)); steel.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir); add(steel);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(3, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), M.steel);
+    cap.position.copy(tip); cap.quaternion.copy(steel.quaternion); add(cap);
+    const crimp = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 3, 4, 32), M.steel);
+    crimp.position.copy(top.clone().add(dir.clone().multiplyScalar(2))); crimp.quaternion.copy(steel.quaternion); add(crimp);
+    const exit = top.clone().add(dir.clone().multiplyScalar(4));
+    const split = new THREE.Vector3(BB.x + 6, 15, BB.z + 30);
+    tube([exit, exit.clone().add(new THREE.Vector3(3, 14, -6)), new THREE.Vector3(split.x + 10, 34, split.z + 22), new THREE.Vector3(split.x + 2, 18, split.z + 6), split], 1.65, M.cable);
+    // heat-shrink at the split, then three stripped leads into row d
+    const hs = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 6, 20), M.cable);
+    hs.position.copy(split.clone().add(new THREE.Vector3(-0.4, -0.6, -2.6))); hs.lookAt(split.clone().add(new THREE.Vector3(-1, -1, -8))); hs.rotateX(Math.PI / 2); add(hs);
+    [[3, C.v5], [6, C.d2], [9, C.gnd]].forEach(([col, hex], i) => {
+      const h = hole(col, 3);
+      const end = new THREE.Vector3(h.x, h.y + 2.4, h.z);
+      const from = split.clone().add(new THREE.Vector3((i - 1) * 1.2, -0.4, -4.5));
+      tube([from, new THREE.Vector3((from.x + end.x) / 2, 13.5, (from.z + end.z) / 2 + 3), new THREE.Vector3(end.x, end.y + 3, end.z + 1.2), end], 0.62, wireMat(hex), 60);
+      box(0.5, 3.2, 0.5, M.tin, h.x, h.y + 0.8, h.z); // bare tinned lead
+    });
+    label('DS18B20', new THREE.Vector3(top.x + 9, top.y + 6, top.z), 'big');
+  }
+
+  // ======================================================================
+  // Jumper wires (exactly as wired in arduino.ino)
+  // ======================================================================
+  jumper(pins['P:5V'], hole(3, 0), C.v5, { lift: 13, bow: -3 });
+  jumper(pins['P:GND'], hole(9, 0), C.gnd, { lift: 11, bow: 2 });
+  jumper(pins['D:2'], hole(6, 0), C.d2, { lift: 24, bow: -6 });
+  jumper(pins['A:A1'], tdsPins['A'], C.a1, { lift: 20, maleB: false, bow: 8 });
+  jumper(tdsPins['+'], hole(3, 1), C.v5, { lift: 18, maleA: false, bow: -4 });
+  jumper(tdsPins['−'], hole(9, 1), C.gnd, { lift: 24, maleA: false, bow: 6 });
+
+  const pinLabel = (p, text, dx, dz) => label(text, new THREE.Vector3(p.x + (dx || 0), p.y + 19, p.z + (dz || 0)), '');
+  pinLabel(pins['P:5V'], '5V', -5, 3);
+  pinLabel(pins['P:GND'], 'GND', 3, 6);
+  pinLabel(pins['A:A1'], 'A1', 4, 3);
+  pinLabel(pins['D:2'], 'D2', 0, -5);
+
+
+
+  scene.traverse((o) => { const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : []; ms.forEach((m) => { if (m.envMapIntensity !== undefined && !(m.transmission > 0)) m.envMapIntensity = 0.45; }); });
+
+  // ---------- opening animation: parts drop in, wires draw, camera settles (plays once) ----------
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const skip = new Set([floor, key, rim]);
+  const parts = scene.children.filter((o) => (o.isMesh || o.isInstancedMesh) && !skip.has(o) && !TUBES.some((t) => t.mesh === o));
+  parts.forEach((o) => {
+    o.userData.y0 = o.position.y; o.userData.s0 = o.scale.clone();
+    const p = o.isInstancedMesh ? { x: 0, z: 0 } : o.position;
+    o.userData.delay = 0.1 + Math.min(1.1, Math.hypot(p.x, p.z) / 150) + Math.random() * 0.1;
+  });
+  TUBES.forEach((t, i) => { t.count = t.mesh.geometry.index.count; t.delay = 1.4 + i * 0.06; });
+  const endPos = camera.position.clone();
+  const startPos = endPos.clone().sub(controls.target).multiplyScalar(1.9).applyAxisAngle(new THREE.Vector3(0, 1, 0), -0.9).add(controls.target);
+  const easeOutBack = (x) => 1 + 2.5 * Math.pow(x - 1, 3) + 1.5 * Math.pow(x - 1, 2);
+  const easeInOut = (x) => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  const clamp01 = (x) => Math.max(0, Math.min(1, x));
+  const DURATION = 3.4;
+  function pose(T) {
+    parts.forEach((o) => {
+      const p = clamp01((T - o.userData.delay) / 0.85), e = p >= 1 ? 1 : easeOutBack(p);
+      o.position.y = o.userData.y0 + (1 - Math.min(1, e)) * 45;
+      const s = Math.max(0.0001, Math.min(e, 1.06));
+      o.scale.set(o.userData.s0.x * s, o.userData.s0.y * s, o.userData.s0.z * s);
+      o.visible = p > 0;
+    });
+    TUBES.forEach((t) => { const p = easeInOut(clamp01((T - t.delay) / 1.0)); t.mesh.geometry.setDrawRange(0, Math.floor(t.count * p / 6) * 6); });
+    camera.position.lerpVectors(startPos, endPos, easeInOut(clamp01(T / DURATION)));
+    camera.lookAt(controls.target);
+  }
+
+  function render() { renderer.render(scene, camera); }
+  function resize() {
+    const w = host.clientWidth, h = host.clientHeight;
+    renderer.setSize(w, h); camera.aspect = w / h; camera.fov = w < 600 ? 42 : 32; camera.updateProjectionMatrix(); render();
+  }
+  window.addEventListener('resize', resize);
+  controls.addEventListener('change', render);   // after the intro, draw only when the viewer drags
+  resize();
+  if (reduceMotion) { pose(99); controls.update(); render(); }
+  else {
+    controls.enabled = false;
+    const t0 = performance.now();
+    (function tick(now) {
+      const T = (now - t0) / 1000;
+      pose(T); render();
+      if (T < DURATION + 0.2) requestAnimationFrame(tick);
+      else { pose(99); controls.enabled = true; controls.update(); render(); }
+    })(t0);
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(render, 50));
+})();
+</script>
+</body>
+</html>
