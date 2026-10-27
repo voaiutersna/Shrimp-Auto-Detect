@@ -38,8 +38,6 @@ h1 span { display: block; font-weight: 700; font-size: .55em; letter-spacing: .0
 h2 { font-family: var(--mono); font-size: 12.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
 .block { border-top: 1px solid var(--line); padding-block: 26px; }
 ul { list-style: none; margin: 0; padding: 0; }
-.team li { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; }
-.team li span { font-family: var(--mono); font-size: 14px; color: var(--muted); white-space: nowrap; }
 
 .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .card { margin: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #0f1112;
@@ -62,6 +60,28 @@ pre .l { display: block; padding-right: 18px; }
 pre .l::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 44px; padding-right: 14px; text-align: right; color: #3b4042; user-select: none; }
 .c-cm { color: #6f7674; font-style: italic; } .c-st { color: #e6c98a; } .c-kw { color: #ff9b8a; } .c-nu { color: #9fd3ff; } .c-fn { color: #b9f0c0; } .c-pp { color: #d6a8ff; }
 .hint { margin: 10px 0 0; font-size: 14px; color: var(--muted); }
+
+.prose p { margin: 0 0 12px; color: #c6cac8; }
+.prose p:last-child { margin-bottom: 0; }
+h3 { font-size: 16.5px; font-weight: 600; margin: 0 0 6px; }
+.dash li { position: relative; padding-left: 18px; margin: 6px 0; color: #c6cac8; }
+.dash li::before { content: "–"; position: absolute; left: 0; color: var(--muted); }
+.steps { counter-reset: st; }
+.steps li { counter-increment: st; display: grid; grid-template-columns: 34px 1fr; gap: 6px; padding: 9px 0; border-bottom: 1px dashed var(--line); color: #c6cac8; }
+.steps li:last-child { border-bottom: 0; }
+.steps li::before { content: counter(st, decimal-leading-zero); font: 500 13px var(--mono); color: var(--muted); padding-top: 3px; }
+.steps b, .issue b { color: var(--fg); font-weight: 600; }
+.issue { padding: 16px 0; border-bottom: 1px dashed var(--line); }
+.issue:first-of-type { padding-top: 4px; }
+.issue:last-child { border-bottom: 0; padding-bottom: 0; }
+.issue p { margin: 4px 0 0; color: #c6cac8; }
+.issue .tag { font: 500 11.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-right: 8px; }
+.member { padding: 16px 0; border-bottom: 1px dashed var(--line); }
+.member:first-of-type { padding-top: 4px; }
+.member:last-child { border-bottom: 0; padding-bottom: 0; }
+.member .who { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; flex-wrap: wrap; }
+.member .who span { font-family: var(--mono); font-size: 14px; color: var(--muted); white-space: nowrap; }
+.member .role { margin: 2px 0 4px; font: 500 13px var(--mono); color: #c9cdcb; }
 footer { border-top: 1px solid var(--line); padding-block: 26px calc(30px + env(safe-area-inset-bottom, 0px)); text-align: center; }
 .btn { display: inline-block; font: 600 15px var(--body); padding: 11px 20px; border-radius: 8px; border: 1px solid var(--fg); background: var(--fg); color: var(--bg); text-decoration: none; }
 </style>
@@ -76,6 +96,24 @@ footer { border-top: 1px solid var(--line); padding-block: 26px calc(30px + env(
     <h1>Smart Shrimp Pond <span>MONITORING SYSTEM</span></h1>
     <p class="lead">วัดค่า TDS และอุณหภูมิน้ำในบ่อกุ้ง ส่งขึ้นเว็บทุก 1 วินาที และแจ้งเตือนทันทีเมื่อ TDS เกิน 800 ppm</p>
   </header>
+
+  <section class="block prose">
+    <h2>ที่มาและเป้าหมาย</h2>
+    <p>กุ้งไวต่อการเปลี่ยนแปลงของน้ำมาก ถ้าปริมาณของแข็งที่ละลายในน้ำ (TDS) สูงเกินไปหรืออุณหภูมิแกว่ง กุ้งจะเครียด กินอาหารน้อยลง และอาจตายยกบ่อ แต่เกษตรกรส่วนใหญ่ยังตักน้ำไปวัดเองเป็นครั้งคราว จึงรู้ตัวช้า</p>
+    <p>เป้าหมายของโปรเจกต์คือทำเครื่องวัดที่จุ่มไว้ในบ่อได้ตลอด วัดค่า TDS และอุณหภูมิน้ำอย่างต่อเนื่อง ส่งข้อมูลขึ้นเว็บให้ดูได้จากมือถือหรือคอมพิวเตอร์ เก็บประวัติไว้ดูย้อนหลัง และเตือนทันทีเมื่อค่าเกินเกณฑ์ที่ไม่เหมาะกับกุ้ง (TDS ≥ 800 ppm)</p>
+  </section>
+
+  <section class="block">
+    <h2>ระบบทำงานอย่างไร</h2>
+    <ol class="steps">
+      <li><span><b>อ่านค่า TDS</b> — บอร์ดอ่านค่า analog จากขา A1 ทุก 40 มิลลิวินาที เก็บไว้ในบัฟเฟอร์ 30 ค่าแบบวนซ้ำ แล้วใช้ค่ามัธยฐาน (median) แปลงเป็นแรงดัน เพื่อตัดค่าที่กระโดดจากสัญญาณรบกวน</span></li>
+      <li><span><b>อ่านอุณหภูมิ</b> — DS18B20 ส่งค่าผ่านสาย OneWire ที่ขา D2 ทุก 1 วินาที ถ้าอ่านไม่ได้ (สายหลุด) จะใช้ค่าล่าสุด หรือ 25 °C เป็นค่าเริ่มต้น</span></li>
+      <li><span><b>ชดเชยอุณหภูมิ</b> — ค่าการนำไฟฟ้าของน้ำเปลี่ยนตามอุณหภูมิ จึงหารแรงดันด้วย 1 + 0.02 × (T − 25) ก่อนแปลงเป็น ppm ด้วยสมการกำลังสามของโมดูล TDS</span></li>
+      <li><span><b>ส่งขึ้นเซิร์ฟเวอร์</b> — ทุก 1 วินาที บอร์ดส่ง JSON <code>{"temperature", "tds"}</code> ด้วย HTTP POST ผ่าน Wi-Fi โดยแนบ header <code>x-api-key</code> เพื่อให้เซิร์ฟเวอร์รับเฉพาะข้อมูลจากบอร์ดของเรา</span></li>
+      <li><span><b>เก็บข้อมูล</b> — เซิร์ฟเวอร์ Node.js + Express ตรวจ API key และตรวจว่าค่าเป็นตัวเลขจริง แล้วบันทึกลง SQLite พร้อมเวลา (มี index ที่คอลัมน์เวลาเพื่อให้ดึงตามช่วงเวลาได้เร็ว)</span></li>
+      <li><span><b>แสดงผล</b> — หน้าแดชบอร์ดดึงข้อมูลทุก 3 วินาที แสดงค่าล่าสุด กราฟย้อนหลัง สถิติ 24 ชั่วโมง (เฉลี่ย/ต่ำสุด/สูงสุด) สถานะออนไลน์ของบอร์ด และขึ้นแจ้งเตือนเมื่อ TDS ≥ 800 ppm ดาวน์โหลดข้อมูลทั้งหมดเป็น CSV ได้</span></li>
+    </ol>
+  </section>
 
   <section class="block">
     <h2>อุปกรณ์</h2>
@@ -101,12 +139,74 @@ footer { border-top: 1px solid var(--line); padding-block: 26px calc(30px + env(
   </section>
 
   <section class="block">
-    <h2>สมาชิก</h2>
-    <ul class="team">
-      <li>พรวัฒนา วัฒนธำรงค์ <span>68070115</span></li>
-      <li>พุฒิพงศ์ พฤฒิสถาพร <span>68070129</span></li>
-      <li>ภูวดล ไตรพรหม <span>68070147</span></li>
+    <h2>สิ่งที่ลองทำ อุปสรรค และวิธีแก้</h2>
+    <div class="issue">
+      <h3>ค่า TDS แกว่งไปมา อ่านทีละค่าแล้วกระโดด</h3>
+      <p><span class="tag">แก้</span>ช่วงแรกอ่านค่า analog ครั้งเดียวแล้วคำนวณเลย ตัวเลขบน Serial Monitor กระโดดขึ้นลงหลายสิบ ppm ทั้งที่น้ำไม่เปลี่ยน จึงเปลี่ยนเป็นเก็บค่า 30 ค่าทุก 40 ms แล้วใช้มัธยฐานแทน ค่าออกมานิ่งขึ้นชัดเจน และใช้มัธยฐานแทนค่าเฉลี่ยเพราะไม่โดนค่าผิดปกติค่าเดียวดึงไป</p>
+    </div>
+    <div class="issue">
+      <h3>ค่า TDS เปลี่ยนตามอุณหภูมิน้ำ</h3>
+      <p><span class="tag">แก้</span>น้ำเดียวกันแต่อุ่นขึ้นจะนำไฟฟ้าดีขึ้น ทำให้ TDS อ่านได้สูงกว่าจริง จึงเพิ่มเซนเซอร์ DS18B20 เข้ามาวัดอุณหภูมิ แล้วนำมาชดเชยค่า TDS ด้วยสัมประสิทธิ์ 2% ต่อองศา อุณหภูมิจึงได้ทั้งเป็นข้อมูลแสดงผลและเป็นตัวช่วยให้ TDS แม่นขึ้น</p>
+    </div>
+    <div class="issue">
+      <h3>อ่านอุณหภูมิแล้วโปรแกรมหยุดรอ</h3>
+      <p><span class="tag">แก้</span>DS18B20 ใช้เวลาแปลงค่าประมาณ 750 ms ถ้ารอแบบปกติ loop จะค้างและการเก็บค่า TDS สะดุด จึงตั้ง <code>setWaitForConversion(false)</code> สั่งให้เริ่มวัดแล้วไปทำงานอื่นก่อน ค่อยกลับมาอ่านผลในรอบถัดไป และเขียนทุกงานด้วยการจับเวลา <code>millis()</code> แทน <code>delay()</code> เพื่อให้การอ่านเซนเซอร์และการส่งข้อมูลทำงานคู่กันได้</p>
+    </div>
+    <div class="issue">
+      <h3>Wi-Fi หลุด / บอร์ดได้ IP ช้า</h3>
+      <p><span class="tag">แก้</span>บางครั้งต่อ Wi-Fi สำเร็จแต่ยังไม่ได้ IP ทำให้ส่งข้อมูลรอบแรกไม่ผ่าน จึงให้รอจนได้ IP จริงก่อน (สูงสุด 5 วินาที) และจำกัดเวลาเชื่อมต่อ 15 วินาทีไม่ให้ค้าง ถ้าสัญญาณหลุดระหว่างทาง ฟังก์ชันส่งข้อมูลจะลองเชื่อมต่อใหม่เองก่อนส่งรอบถัดไป ไม่ต้องกดรีเซ็ตบอร์ด</p>
+    </div>
+    <div class="issue">
+      <h3>บอร์ดกับเซิร์ฟเวอร์หากันไม่เจอ</h3>
+      <p><span class="tag">แก้</span>เซิร์ฟเวอร์รันบนโน้ตบุ๊ก บอร์ดจึงต้องอยู่ใน Wi-Fi วงเดียวกัน (ใช้ฮอตสปอตมือถือ) และต้องใส่ IP ของโน้ตบุ๊กที่ดูจาก <code>ipconfig</code> ลงในโค้ด ต้องให้เซิร์ฟเวอร์ฟังที่ <code>0.0.0.0</code> ไม่ใช่แค่ localhost เครื่องอื่นจึงเข้าได้ ทุกครั้งที่เปลี่ยนเครือข่ายต้องแก้ IP แล้วอัปโหลดโค้ดใหม่ ซึ่งยังเป็นข้อจำกัดอยู่</p>
+    </div>
+    <div class="issue">
+      <h3>ข้อมูลเยอะขึ้นเรื่อย ๆ</h3>
+      <p><span class="tag">แก้</span>ส่งทุก 1 วินาทีคือประมาณ 86,400 แถวต่อวัน จึงเลือกใช้ SQLite (better-sqlite3) เปิดโหมด WAL ให้เขียนกับอ่านพร้อมกันได้ ทำ index ที่คอลัมน์เวลา จำกัดการดึงไม่เกิน 20,000 แถวต่อครั้ง และให้ export CSV แบบทยอยเขียนทีละแถวแทนการโหลดทั้งหมดเข้าหน่วยความจำ</p>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>ผลลัพธ์ตอนนี้</h2>
+    <ul class="dash">
+      <li>วัด TDS และอุณหภูมิน้ำได้ต่อเนื่อง ค่านิ่งพอใช้งาน</li>
+      <li>ส่งข้อมูลขึ้นเว็บทุก 1 วินาทีผ่าน Wi-Fi และต่อใหม่เองเมื่อหลุด</li>
+      <li>แดชบอร์ดแสดงค่าล่าสุด กราฟย้อนหลัง และสถิติ 24 ชม.</li>
+      <li>แบ่งระดับคุณภาพน้ำ 4 ระดับ และแจ้งเตือนบนหน้าเว็บเมื่อ TDS ≥ 800 ppm</li>
+      <li>บอกได้ว่าบอร์ดยังออนไลน์อยู่หรือไม่</li>
+      <li>เก็บประวัติลงฐานข้อมูลและดาวน์โหลดเป็น CSV ได้</li>
+      <li>กันข้อมูลปลอมด้วย API key และตรวจรูปแบบข้อมูลก่อนบันทึก</li>
     </ul>
+  </section>
+
+  <section class="block">
+    <h2>สมาชิกและหน้าที่</h2>
+    <div class="member">
+      <div class="who"><h3>พรวัฒนา วัฒนธำรงค์</h3><span>68070115</span></div>
+      <p class="role">Website &amp; Poster</p>
+      <ul class="dash">
+        <li>ออกแบบและเขียนหน้าแดชบอร์ด (กราฟ สถิติ แจ้งเตือน สถานะออนไลน์) และหน้าเกี่ยวกับโครงงาน</li>
+        <li>ทำหน้าเว็บนำเสนอโปรเจกต์หน้านี้ รวมถึงโมเดล 3 มิติของชุดอุปกรณ์</li>
+      </ul>
+    </div>
+    <div class="member">
+      <div class="who"><h3>พุฒิพงศ์ พฤฒิสถาพร</h3><span>68070129</span></div>
+      <p class="role">GitHub Document &amp; Video Editor</p>
+      <ul class="dash">
+        <li>ดูแล repository บน GitHub และเขียน README (ที่มา การต่อวงจร วิธีติดตั้ง API)</li>
+        <li>เรียบเรียงเอกสารอธิบายการทำงาน อุปสรรค และผลลัพธ์ของโปรเจกต์</li>
+        <li>ถ่ายและตัดต่อวิดีโอสาธิตการทำงานของระบบ</li>
+      </ul>
+    </div>
+    <div class="member">
+      <div class="who"><h3>ภูวดล ไตรพรหม</h3><span>68070147</span></div>
+      <p class="role">Arduino Circuit Designer &amp; .ino</p>
+      <ul class="dash">
+        <li>ออกแบบและต่อวงจร TDS Sensor และ DS18B20 เข้ากับ Arduino UNO R4 WiFi</li>
+        <li>เขียนโค้ด arduino.ino: กรองสัญญาณด้วยมัธยฐาน ชดเชยอุณหภูมิ และส่งข้อมูลผ่าน Wi-Fi</li>
+        <li>ทดสอบเซนเซอร์กับน้ำตัวอย่างและแก้ปัญหาการเชื่อมต่อ Wi-Fi</li>
+      </ul>
+    </div>
   </section>
 </main>
 
