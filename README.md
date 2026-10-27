@@ -103,7 +103,7 @@ Arduino (C++) · Node.js · Express · SQLite (better-sqlite3) · Chart.js · Ta
 https://shrimp-auto-detect-doc.vercel.app/
 
 ## วิดีโอสาธิต
-[ลิงก์ YouTube]
+https://youtu.be/WHTtMh5xdtY
 
 ## โปสเตอร์
 ![Poster](doc/smart-shrimp-pond-poster-A1_2.png)
